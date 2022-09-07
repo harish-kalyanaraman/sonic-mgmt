@@ -171,13 +171,16 @@ def mirror_setup(duthosts, enum_rand_one_per_hwsku_frontend_hostname):
     setup fixture
     """
     duthost = duthosts[enum_rand_one_per_hwsku_frontend_hostname]
-    duthost.command('mkdir -p {}'.format(MIRROR_RUN_DIR))
-    tmp_path = duthost.tempfile(path=MIRROR_RUN_DIR, state='directory', prefix='mirror', suffix="")['path']
+    if duthost.facts['asic_type'] == "marvell":
+        pytest.skip("Mirroring is not supported for asic type = {}".format(duthost.facts['asic_type']))
+    else:
+        duthost.command('mkdir -p {}'.format(MIRROR_RUN_DIR))
+        tmp_path = duthost.tempfile(path=MIRROR_RUN_DIR, state='directory', prefix='mirror', suffix="")['path']
 
-    setup_info = {
-        'dut_tmp_dir': tmp_path,
-    }
-    yield setup_info
+        setup_info = {
+            'dut_tmp_dir': tmp_path,
+        }
+        yield setup_info
 
 
 @pytest.fixture(scope='function')
@@ -241,12 +244,15 @@ def teardown_mirroring(dut, tmp_path):
     :param setup: setup information
     :return:
     """
-    logger.info('Removing Mirroring rules')
-    # copy rules remove configuration
-    dst = os.path.join(tmp_path, ACL_RULE_PERSISTENT_DEL_FILE)
-    dut.copy(src=os.path.join(FILES_DIR, ACL_RULE_PERSISTENT_DEL_FILE), dest=dst)
-    dut.command("acl-loader update full {}".format(dst))
-    dut.command('config mirror_session remove {}'.format(SESSION_INFO['name']))
+    if dut.facts['asic_type'] == "marvell":
+        pytest.skip("Mirroring is not supported for asic type = {}".format(dut.facts['asic_type']))
+    else:
+        logger.info('Removing Mirroring rules')
+        # copy rules remove configuration
+        dst = os.path.join(tmp_path, ACL_RULE_PERSISTENT_DEL_FILE)
+        dut.copy(src=os.path.join(FILES_DIR, ACL_RULE_PERSISTENT_DEL_FILE), dest=dst)
+        dut.command("acl-loader update full {}".format(dst))
+        dut.command('config mirror_session remove {}'.format(SESSION_INFO['name']))
 
 
 @pytest.fixture(scope='function', params=['acl', 'mirroring'])
