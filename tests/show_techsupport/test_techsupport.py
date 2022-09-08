@@ -206,6 +206,10 @@ def mirroring(duthosts, enum_rand_one_per_hwsku_frontend_hostname, neighbor_ip, 
     :param mirror_config: mirror_config fixture
     """
     duthost = duthosts[enum_rand_one_per_hwsku_frontend_hostname]
+    if duthost.facts['asic_type'] == "marvell":
+        logger.info("Mirroring not supported on Marvell asics")
+        return
+
     logger.info("Adding mirror_session to DUT")
     acl_rule_file = os.path.join(mirror_setup['dut_tmp_dir'], ACL_RULE_PERSISTENT_FILE)
     extra_vars = {
